@@ -3,8 +3,8 @@
 
 # OAuth 2 Example with Spring Boot and React
 
-This project was put together to demonstrate how to use OAuth 2 with Spring Boot 4 following a frustrating time trying to get
-this to work after rummaging the, at times,  non too clear documentation and examples
+This project was created as a practical note to demonstrate how to use OAuth 2 with Spring Boot 4 after a frustrating experience 
+trying to get it working by piecing together documentation and examples that were often unclear or seemingly incomplete.
 
 
 This demonstration features:
@@ -38,6 +38,9 @@ npm run dev
 ```
 
 The passwords for ```alice``` & ```bob``` are ```password1```
+
+Project login page: ```http://localhost:5173/```
+
 
 # What You Get - Username/Password
 
