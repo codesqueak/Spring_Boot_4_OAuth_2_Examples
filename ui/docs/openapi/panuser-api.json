@@ -1,0 +1,106 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "User Service",
+        "description": "User API",
+        "contact": {
+            "name": "Admin",
+            "url": "http://www.sleepymouse.co.uk",
+            "email": "admin@sleepymouse.co.uk"
+        },
+        "license": {
+            "name": "The sleepymouse licence",
+            "url": "http://www.sleepymouse.co.uk"
+        },
+        "version": "0.0.1"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:9095",
+            "description": "Generated server url"
+        }
+    ],
+    "tags": [
+        {
+            "name": "User",
+            "description": "User management endpoints"
+        }
+    ],
+    "paths": {
+        "/user/v1/login": {
+            "post": {
+                "tags": [
+                    "User"
+                ],
+                "summary": "Authenticate and obtain a JWT",
+                "operationId": "login",
+                "parameters": [
+                    {
+                        "name": "x-correlation-id",
+                        "in": "header",
+                        "description": "Correlation ID for request tracing",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequestDto"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    },
+                    "200": {
+                        "description": "JWT returned",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": "eyJhbGci..."
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "LoginRequestDto": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "client_id": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "client_id",
+                    "password",
+                    "username"
+                ]
+            }
+        }
+    }
+}

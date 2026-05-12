@@ -1,0 +1,209 @@
+import de.gesellix.gradle.docker.tasks.DockerBuildTask
+import groovy.json.JsonOutput
+
+/*
+ * Copyright (c) 2019, 2026  sleepymouse.co.uk All  Rights Reserved
+ */
+
+buildscript {
+    ext {
+        springBootVersion = "4.0.5"
+    }
+    repositories {
+        mavenCentral()
+    }
+}
+
+plugins {
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'de.gesellix.docker' version '2025-05-17T21-05-00'
+    id 'application'
+    id 'maven-publish'
+    id 'idea'
+    id 'java'
+    id 'org.springframework.boot' version "${springBootVersion}"
+}
+
+description = "Pan User Service"
+group = 'com.codingrodent.pan'
+
+application {
+    mainClass = 'com.codingrodent.pan.user.Application'
+}
+
+
+repositories {
+    mavenCentral()
+    maven {
+        url = "http://localhost:8081/artifactory/libs-release-local"
+        allowInsecureProtocol = true
+        credentials {
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+        }
+    }
+}
+
+
+// version number to use in various places
+def versionPropsFile = file('version.properties')
+def Properties versionProps = new Properties()
+
+if (versionPropsFile.canRead()) {
+    versionProps.load(new FileInputStream(versionPropsFile))
+} else {
+    versionProps['PATCH_VERSION'] = '9999'
+}
+
+println("props = " + versionProps)
+
+def patchVersion = versionProps['PATCH_VERSION'].toInteger() + 1
+versionProps['PATCH_VERSION'] = patchVersion.toString()
+versionProps.store(versionPropsFile.newWriter(), null)
+//
+if (System.env.BUILD_NUMBER) {
+    project.version = projectVersionMajor + '.' + projectVersionMinor + '.' + System.env.BUILD_NUMBER
+} else {
+    project.version = projectVersionMajor + '.' + projectVersionMinor + '.' + patchVersion + '-SNAPSHOT'
+}
+
+//  spring has problems find names under some circumstances - this helps
+compileJava {
+    options.compilerArgs << '-parameters'
+}
+
+// set the java version
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+javadoc {
+    options.addBooleanOption('html5', true)
+}
+
+bootJar {
+    manifest {
+        attributes("Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Created-By": 'sleepymouse.co.uk',
+                "Sealed": true
+        )
+    }
+}
+
+tasks.register('generateOpenApiDocs') {
+    description = "Start the app on a temporary port, fetch /v3/api-docs, and write spec/panuser-api.json"
+    group = "documentation"
+    dependsOn bootJar
+
+    doLast {
+        def tempPort = 9095
+        def specDir = file("spec")
+        specDir.mkdirs()
+        def outFile = new File(specDir, "panuser-api.json")
+
+        def process = new ProcessBuilder(
+                'java', '-jar',
+                bootJar.archiveFile.get().asFile.absolutePath,
+                "--server.port=${tempPort}",
+                '--server.compression.enabled=false'
+        ).redirectErrorStream(true).start()
+
+        try {
+            def deadline = System.currentTimeMillis() + 60_000
+            def fetched = false
+            while (!fetched && System.currentTimeMillis() < deadline) {
+                try {
+                    def conn = new URL("http://localhost:${tempPort}/v3/api-docs").openConnection()
+                    conn.connectTimeout = 2000
+                    conn.readTimeout = 10_000
+                    if (conn.responseCode == 200) {
+                        outFile.text = JsonOutput.prettyPrint(conn.inputStream.text)
+                        fetched = true
+                    }
+                } catch (ignored) {
+                    Thread.sleep(2000)
+                }
+            }
+            if (!fetched) {
+                throw new GradleException("App did not start within 60 seconds or /v3/api-docs was unreachable")
+            }
+            logger.lifecycle("OpenAPI spec written to ${outFile}")
+        } finally {
+            process.destroyForcibly()
+        }
+    }
+}
+
+def theImageName = "pan/panuser"
+def imageTag = "latest"
+def fullImageName = "${theImageName}:${imageTag}"
+
+
+// Task to build the Docker image
+tasks.register('buildImage', DockerBuildTask) {
+    description = "Build Docker image with Spring Boot JAR"
+    dependsOn bootJar
+    doFirst {
+        copy {
+            from bootJar.archiveFile
+            into file("./docker/")
+            rename { "app.jar" }
+        }
+    }
+    buildContextDirectory = file("./docker/")
+    imageName = fullImageName
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+configurations.configureEach {
+    // Check for updates every build
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+
+dependencies {
+    //
+    // spring boot
+    implementation "org.springframework.boot:spring-boot-starter-cache:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-amqp:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-oauth2-authorization-server:${springBootVersion}"
+    // Source: https://mvnrepository.com/artifact/org.springframework.security/spring-security-crypto
+    implementation("org.springframework.security:spring-security-crypto:7.0.4")
+    //
+    // jwt support
+    implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+    //
+    // various
+    implementation "org.glassfish:jakarta.el:4.0.2"
+    implementation "net.logstash.logback:logstash-logback-encoder:9.0"
+    implementation("tools.jackson.module:jackson-module-blackbird:3.1.2")
+    //
+    // swagger
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:3.0.2"
+    //
+    // testing ... testing ... 1 2 3
+    testImplementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    testImplementation "org.bouncycastle:bcprov-jdk18on:1.80"
+    testImplementation "org.springframework.amqp:spring-rabbit-test:4.0.2"
+    testRuntimeOnly "org.mockito:mockito-core:5.20.0"
+    testRuntimeOnly "org.mockito:mockito-junit-jupiter:5.20.0"
+}
+
+wrapper {
+    gradleVersion = '9.4.1'
+    distributionType = Wrapper.DistributionType.BIN
+}

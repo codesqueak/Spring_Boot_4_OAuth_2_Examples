@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- File JSON format appender -->
+
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <pattern>
+                    <pattern>
+                        {
+                        "timestamp": "%date{yyyy-MM-dd'T'HH:mm:ss.SSSZZ}",
+                        "level": "%level",
+                        "cid": "%X{cid:-00000000-0000-0000-0000-000000000000}",
+                        "thread": "%t",
+                        "app": "%X{app:-pan-user}",
+                        "component": "%X{component:-undefined}",
+                        "class": "%class{60}",
+                        "message": "%m"
+                        }
+                    </pattern>
+                </pattern>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+
+    <!-- Loggers -->
+
+    <logger name="org.hibernate.validator.internal.util.Version" level="INFO"/>
+
+    <logger name="org.springframework.security"
+            level="DEBUG"/> <!-- to debug security related issues (DEBUG) -->
+
+    <logger name="org.springframework" level="INFO"/>
+
+    <logger name="com.codingrodent.pan" level="INFO"/>
+
+
+    <!-- File appender for debugging -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/tmp/pan-user-debug.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>/tmp/pan-user-debug.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>1</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{60} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- default logging levels for all appenders -->
+
+    <root level="INFO">
+        <appender-ref ref="JSON"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
