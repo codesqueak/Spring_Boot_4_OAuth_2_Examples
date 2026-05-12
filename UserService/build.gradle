@@ -1,9 +1,6 @@
 import de.gesellix.gradle.docker.tasks.DockerBuildTask
 import groovy.json.JsonOutput
 
-/*
- * Copyright (c) 2019, 2026  sleepymouse.co.uk All  Rights Reserved
- */
 
 buildscript {
     ext {
@@ -173,10 +170,8 @@ dependencies {
     //
     // spring boot
     implementation "org.springframework.boot:spring-boot-starter-cache:${springBootVersion}"
-    implementation "org.springframework.boot:spring-boot-starter-data-mongodb:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-web:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-validation:${springBootVersion}"
-    implementation "org.springframework.boot:spring-boot-starter-amqp:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-security:${springBootVersion}"
     implementation "org.springframework.boot:spring-boot-starter-oauth2-authorization-server:${springBootVersion}"
     // Source: https://mvnrepository.com/artifact/org.springframework.security/spring-security-crypto

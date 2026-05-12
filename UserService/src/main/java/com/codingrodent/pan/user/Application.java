@@ -8,7 +8,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -17,7 +16,6 @@ import java.util.UUID;
 
 import static com.codingrodent.pan.user.constants.ServiceConstants.*;
 
-@EnableMongoRepositories(basePackages = {"com.codingrodent.pan.user"})
 @SpringBootApplication(scanBasePackages = {"com.codingrodent.pan.user"})
 public class Application {
 
