@@ -1,5 +1,5 @@
 
-[![License: MIT](https://img.shields.io/badge/license-Apache_2.0-brightgreen.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](https://opensource.org/license/mit)
 
 # OAuth 2 Example with Spring Boot and React
 
@@ -22,7 +22,7 @@ What you need:
 [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 
 
-## To Build The Java Project
+## To Build & Run The Java Project
 
 ```
 ./gradle clean build test
